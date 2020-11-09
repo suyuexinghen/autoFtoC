@@ -39,14 +39,14 @@ awk '{if($0~"__global__[ ]* void[ ]* " "'"$fun"'" "[ ]*\\(")
 	awk 'BEGIN{RS="^$"}{gsub(/\n/," ");gsub(/__global__/,"\n");printf $0;}' \
 	> $fun.global
 
-grep "$fun" api_call |\
+grep "\<$fun\>" api_call |\
 	awk -F "[()]" '{print $2}' |\
 	awk -F "," '{
 		for(i=1;i<=NF;i++) print gensub(" ","","g",$i);
 		}' \
 	> $fun.tmp1
 
-grep "$fun" $fun.global |\
+grep "\<$fun\>" $fun.global |\
 	awk -F "[()]" '{print gensub("\t"," ","g",$2)}' |\
 	awk -F "," '{gsub("(^|\\W)(const )?(double|float|int) "," ");
 		gsub(/*/,"");
@@ -72,7 +72,7 @@ fi
 
 done
 
-function check_dependence(){
+function merge_kernel(){
 
 cat $1.log |\
 	awk 'BEGIN{RS="^$"}{sub("\\).*$",",");printf $0;}' \
@@ -84,29 +84,39 @@ cat $2.log |\
 
 var_comm=$(comm -1 -2 <(sort $1.tmp1) <(sort $2.tmp1))
 
-grep "^[ \t]*\<\($1\|$2\)\>" api_call |\
-        sed "/$1/{N;s/)\n[ \t]*$2.*(/,/}" >$1.call
+cat $1.log.1 |\
+	awk -v co="$var_comm" \
+	'BEGIN{RS="^$";cnt=split(co,a_);}{
+		for(i=1;i<=cnt;i++){
+			$0=gensub("([(,])([^(,]|\\s)*\\<"a_[i]"\\>[ \\s]*,","\\1","1");
+		}
+		printf $0; 	
+	}' > $1.log.2
 
-for str in $var_comm;do
-        sed -i -e "s/\<$str\>[ \t]*,//" -e "s/,[ \t]*\<$str\>[ \t]*)/)/" $1.call        
-        sed -i -e "s/\([(,]\)[^(,]*\<$str\>[ ]*,/\1/" -e "s/,[^,]*\<$str\>[ ]*)/)/" $1.log.1
-done
+grep "^[ \t]*\<\($1\|$2\)\>" api_call |\
+        sed "/$1/{N;s/)\n[ \t]*$2.*(/,/}" |\
+	awk -v co="$var_comm" \
+	'BEGIN{RS="^$";cnt=split(co,a_);}{
+		for(i=1;i<=cnt;i++){
+			sub("\\<"a_[i]"\\>[ \\s]*,","");
+		}
+		printf $0; 	
+	}' > $1.call
 
 head -n -1 $1.log |\
 	awk 'BEGIN{RS="^$"}{sub("^[^{]*{","");sub("return;[^}]*$","");printf $0;}' \
-	>> $1.log.1
+	>> $1.log.2
 
 cat $2.log |\
 	awk 'BEGIN{RS="^$"}{sub("^[^{]*{","");printf $0;}' \
-	>> $1.log.1	
+	>> $1.log.2	
 
 }
 
-	check_dependence dens_cu readyt_cu_2
 for i in `seq 0 $[fun_cnt-2]`;do 
-	check_dependence ${fun_array[i]} ${fun_array[i+1]}
+	merge_kernel ${fun_array[i]} ${fun_array[i+1]}
 done
 
-rename .log.1 .log *.log.1
-rm -f *.{tmp1,tmp2} 
+rename .log.2 .log *.log.2
+rm -f *.{tmp1,tmp2},.log.1 
 rm -f *.global
