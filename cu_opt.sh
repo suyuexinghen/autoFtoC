@@ -12,15 +12,14 @@ fi
 
 grep -v "^[ \t]*\/\/" $filename |\
 	sed 's/\/\/.*//' |\
-	sed '/\/\*/{N;/\*\//be;:a;N;/\*\//!ba;:e;s#/\*.*\*/##g}' \
-	> src_copy 
-        cat src_copy|\
-	grep -zo "\w\+[ ]*<<<\([^;]\|\n\)*;" |\
+	sed '/\/\*/{N;/\*\//be;:a;N;/\*\//!ba;:e;s#/\*.*\*/##g}' |\
+        tee src_copy|\
+	grep -zo "\w\+[ ]*<<<\([^;]\|\s\)*;" |\
 	sed  's/\x0//g' |\
         awk 'BEGIN{RS="^$"}{gsub(/\n/," ");gsub(/;/,"\n");gsub("\t"," ");printf $0;}' \
 	> api_call
 
-        fun_set=$(grep -o "^\w\+" api_call)
+fun_set=$(grep -o "^\w\+" api_call)
 fun_array=($fun_set)
 fun_cnt=${#fun_array[@]}
 
@@ -35,7 +34,7 @@ awk '{if($0~"__global__[ ]* void[ ]* " "'"$fun"'" "[ ]*\\(")
 	xargs |\
 	awk '{system("sed -n \""$1","$2"p\" src_copy")}' |\
 	tee $fun.log |\
-	grep -zo "__global__[ \t]* \w\+[ ]*\([^)]\|\n\)*)" |\
+	grep -zo "__global__[ \t]* \w\+[ ]*\([^)]\|\s\)*)" |\
 	sed  's/\x0//g' |\
 	awk 'BEGIN{RS="^$"}{gsub(/\n/," ");gsub(/__global__/,"\n");printf $0;}' \
 	> $fun.global
