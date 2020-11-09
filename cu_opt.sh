@@ -19,7 +19,7 @@ grep -v "^[ \t]*\/\/" $filename |\
         awk 'BEGIN{RS="^$"}{gsub(/\n/," ");gsub(/;/,"\n");gsub("\t"," ");printf $0;}' \
 	> api_call
 
-fun_set=$(grep -o "^\w\+" api_call)
+fun_set=$(grep -o "^[ \t]*\w\+" api_call)
 fun_array=($fun_set)
 fun_cnt=${#fun_array[@]}
 
@@ -84,11 +84,11 @@ cat $2.log |\
 
 var_comm=$(comm -1 -2 <(sort $1.tmp1) <(sort $2.tmp1))
 
-grep "^\<\($1\|$2\)\>" api_call |\
-        sed "/$1/{N;s/)\n$2.*(/,/}" >$1.call
+grep "^[ \t]*\<\($1\|$2\)\>" api_call |\
+        sed "/$1/{N;s/)\n[ \t]*$2.*(/,/}" >$1.call
 
 for str in $var_comm;do
-        sed -i -e "s/\<$str\>[ ]*,//" -e "s/\<$str\>[ ]*)/)/" $1.call        
+        sed -i -e "s/\<$str\>[ \t]*,//" -e "s/,[ \t]*\<$str\>[ \t]*)/)/" $1.call        
         sed -i -e "s/\([(,]\)[^(,]*\<$str\>[ ]*,/\1/" -e "s/,[^,]*\<$str\>[ ]*)/)/" $1.log.1
 done
 
@@ -102,9 +102,9 @@ cat $2.log |\
 
 }
 
+	check_dependence dens_cu readyt_cu_2
 for i in `seq 0 $[fun_cnt-2]`;do 
-#for fun in dens_cu;do
-check_dependence ${fun_array[i]} ${fun_array[i+1]}
+	check_dependence ${fun_array[i]} ${fun_array[i+1]}
 done
 
 rename .log.1 .log *.log.1
