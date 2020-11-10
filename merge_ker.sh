@@ -1,10 +1,5 @@
 filename=$1
 
-if(command -v parallel &>/dev/null) then 
-para="parallel -j2 --pipe"
-fi
-#unset para
-
 ## -z := --null-data 
 ## 一个 0 字节的数据行，但不是空行
 ##  sed  's/\x0//g' 
