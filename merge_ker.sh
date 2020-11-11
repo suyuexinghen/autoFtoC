@@ -1,5 +1,10 @@
 filename=$1
 
+#if(command -v parallel &>/dev/null) then 
+#para="parallel -j2 --pipe"
+#fi
+#unset para
+
 ## -z := --null-data 
 ## 一个 0 字节的数据行，但不是空行
 ##  sed  's/\x0//g' 
@@ -52,8 +57,7 @@ grep "\<$fun\>" $fun.global |\
 str_orig=$(diff $fun.tmp1 $fun.tmp2 | grep "^<" | sed "s/<//")
 str_fun=$(diff $fun.tmp1 $fun.tmp2 | grep "^>" | sed "s/>//")
 
-if(test -n "$str_orig") then
-
+if(test -n str_orig) then
 cat $fun.log |\
 awk -v b="$str_orig" -v a="$str_fun" \
 	'BEGIN{RS="^$";cnt=split(a,a_);split(b,b_);}{
@@ -62,24 +66,24 @@ awk -v b="$str_orig" -v a="$str_fun" \
 		}
 		printf $0; 	
 	}' > $fun.log.1
-mv $fun.log{.1,} 
+#mv $fun.log{.1,} 
 fi
 
 done
 
 function merge_kernel(){
 
-cat $1.log |\
+cat $1.log.1 |\
 	awk 'BEGIN{RS="^$"}{sub("\\).*$",",");printf $0;}' \
-	> $1.log.1
+	> $1.log.0
 
-cat $2.log |\
+cat $2.log.1 |\
 	awk 'BEGIN{RS="^$"}{sub("{.*$","{");sub("^.*\\(","\t\t");print $0;}' \
-	>> $1.log.1	
+	>> $1.log.0
 
 var_comm=$(comm -1 -2 <(sort $1.tmp1) <(sort $2.tmp1))
 
-cat $1.log.1 |\
+cat $1.log.0 |\
 	awk -v co="$var_comm" \
 	'BEGIN{RS="^$";cnt=split(co,a_);}{
 		for(i=1;i<=cnt;i++){
@@ -98,11 +102,11 @@ grep "^[ \t]*\<\($1\|$2\)\>" api_call |\
 		printf $0; 	
 	}' > $1.call
 
-head -n -1 $1.log |\
+head -n -1 $1.log.1 |\
 	awk 'BEGIN{RS="^$"}{sub("^[^{]*{","");sub("return;[^}]*$","");printf $0;}' \
 	>> $1.log.2
 
-cat $2.log |\
+cat $2.log.1 |\
 	awk 'BEGIN{RS="^$"}{sub("^[^{]*{","");printf $0;}' \
 	>> $1.log.2	
 
@@ -110,8 +114,8 @@ cat $2.log |\
 
 for i in `seq 0 $[fun_cnt-2]`;do 
 	merge_kernel ${fun_array[i]} ${fun_array[i+1]}
+        ./check_dep.sh ${fun_array[i]}.log.2 > ${fun_array[i]}.log.3
 done
 
-rename .log.2 .log *.log.2
-rm -f *.{tmp1,tmp2,log.1}
-rm -f *.global
+#rename .log.2 .log *.log.2
+rm -f *.{tmp1,tmp2,log.0,global}
