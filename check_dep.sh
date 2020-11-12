@@ -5,7 +5,7 @@ filename=$1
 #fi
 echo -e "\n"$filename"\n"
  cat $filename |\
-         grep  -Pzo "\b\w+\b[ ]*(\[[^]]*\][ ]*)?=[^;=]*;" |\
+         grep  -Pzo "\b\w+\b[ ]*(\[[^]]*\][ ]*)?[\+\-\*\/]?=[^;=]*;" |\
         sed -e "s/\x0//g" -e "s/[ ]\{2,\}//g" |\
         awk 'BEGIN{RS="^$"}{gsub(/\n/," ");gsub(/;/,";\n");gsub("\t"," ");printf $0;}' \
 	> expr_line
@@ -20,7 +20,6 @@ for var in $var_list;do
         for tmp_var in $tmp_list;do
                 fgrep "$tmp_var" tmp_file | tail -n 1
         done
-
         if(test -s var_match )then
                 echo $a$a
                 var_match=$(cat var_match) 
