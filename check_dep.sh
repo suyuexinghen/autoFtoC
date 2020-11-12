@@ -10,7 +10,7 @@ echo -e "\n"$filename"\n"
         awk 'BEGIN{RS="^$"}{gsub(/\n/," ");gsub(/;/,";\n");gsub("\t"," ");printf $0;}' \
 	> expr_line
 
-var_list=$(grep -o "^\w\+[ ]*\[" expr_line | sed "s/[ ]*\[//g" |sort | uniq)
+var_list=$(grep -o "^[ ]*\w\+[ ]*\[" expr_line | sed "s/[ ]*\[//g" |sort | uniq)
 sed  -e "s/^[^=]*=//" -e "s/ //g" expr_line > line_right
 
 a="-----------"
@@ -24,7 +24,7 @@ for var in $var_list;do
         if(test -s var_match )then
                 echo $a$a
                 var_match=$(cat var_match) 
-                grep -on  "^$var_match[ ]*\[[^]]*\]" expr_line |\
+                grep -on  "^[ ]*$var_match[ ]*\[[^]]*\]" expr_line |\
                 sed "s/ //g" | sort | uniq > var_match1 
                 rm var_match
         fi
