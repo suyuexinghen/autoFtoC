@@ -5,12 +5,12 @@ filename=$1
 #fi
 echo -e "\n"$filename"\n"
  cat $filename |\
- grep  -Pzo "\b\w+\b[ ]*\[[^]]*\][ ]*=[^;=]*;" |\
+         grep  -Pzo "\b\w+\b[ ]*(\[[^]]*\][ ]*)?=[^;=]*;" |\
         sed -e "s/\x0//g" -e "s/[ ]\{2,\}//g" |\
         awk 'BEGIN{RS="^$"}{gsub(/\n/," ");gsub(/;/,";\n");gsub("\t"," ");printf $0;}' \
 	> expr_line
 
- var_list=$(grep -o "^\w\+" expr_line | sort | uniq)
+var_list=$(grep -o "^\w\+[ ]*\[" expr_line | sed "s/[ ]*\[//g" |sort | uniq)
 sed  -e "s/^[^=]*=//" -e "s/ //g" expr_line > line_right
 
 a="-----------"
