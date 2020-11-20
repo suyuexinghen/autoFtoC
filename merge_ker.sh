@@ -119,4 +119,4 @@ for i in `seq 0 $[fun_cnt-2]`;do
 done
 
 #rename .log.2 .log *.log.2
-#rm -f *.{tmp1,tmp2,log.0,global}
+rm -f *.{tmp1,tmp2,log.0,global}
