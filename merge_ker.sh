@@ -16,7 +16,7 @@ grep -v "^[ \t]*\/\/" $filename |\
         tee src_copy|\
 	grep -zo "\w\+[ ]*<<<\([^;]\|\s\)*;" |\
 	sed  's/\x0//g' |\
-        awk 'BEGIN{RS="^$"}{gsub(/\n/," ");gsub(/;/,"\n");gsub("\t"," ");printf $0;}' \
+        awk 'BEGIN{RS="^$"}{gsub(/\n/," ");gsub(/;/,";\n");gsub("\t"," ");printf $0;}' \
 	> api_call
 
 fun_set=$(grep -o "^[ \t]*\w\+" api_call)
@@ -48,7 +48,7 @@ grep "\<$fun\>" api_call |\
 
 grep "\<$fun\>" $fun.global |\
 	awk -F "[()]" '{print gensub("\t"," ","g",$2)}' |\
-	awk -F "," '{gsub("(^|\\W)(const )?(double|float|int) "," ");
+	awk -F "," '{gsub("(const )?(double|double\\*|float|int) "," ");
 		gsub(/*/,"");
 		for(i=1;i<=NF;i++) print gensub(" ","","g",$i);
 		}' \
@@ -57,24 +57,25 @@ grep "\<$fun\>" $fun.global |\
 str_orig=$(diff $fun.tmp1 $fun.tmp2 | grep "^<" | sed "s/<//")
 str_fun=$(diff $fun.tmp1 $fun.tmp2 | grep "^>" | sed "s/>//")
 
-if(test -n str_orig) then
+if(test -n "$str_orig") ;then
 cat $fun.log |\
 awk -v b="$str_orig" -v a="$str_fun" \
 	'BEGIN{RS="^$";cnt=split(a,a_);split(b,b_);}{
 		for(i=1;i<=cnt;i++){
 			gsub("\\<"a_[i]"\\>",b_[i]);
 		}
-		printf $0; 	
 	}' > $fun.log.1
-#mv $fun.log{.1,} 
+else
+cp $fun.log{,.1} 
 fi
 
+		#printf $0; 	
 done
 
 function merge_kernel(){
 
 cat $1.log.1 |\
-	awk 'BEGIN{RS="^$"}{sub("\\).*$",",");printf $0;}' \
+	awk 'BEGIN{RS="^$"}{sub("\\).*$",",");print $0;}' \
 	> $1.log.0
 
 cat $2.log.1 |\
@@ -89,7 +90,7 @@ cat $1.log.0 |\
 		for(i=1;i<=cnt;i++){
 			$0=gensub("([(,])([^(,]|\\s)*\\<"a_[i]"\\>[ \\s]*,","\\1","1");
 		}
-		printf $0; 	
+		print $0; 	
 	}' > $1.log.2
 
 grep "^[ \t]*\<\($1\|$2\)\>" api_call |\
@@ -99,15 +100,15 @@ grep "^[ \t]*\<\($1\|$2\)\>" api_call |\
 		for(i=1;i<=cnt;i++){
 			sub("\\<"a_[i]"\\>[ \\s]*,","");
 		}
-		printf $0; 	
+		print $0; 	
 	}' > $1.call
 
 head -n -1 $1.log.1 |\
-	awk 'BEGIN{RS="^$"}{sub("^[^{]*{","");sub("return;[^}]*$","");printf $0;}' \
+	awk 'BEGIN{RS="^$"}{sub("^[^{]*{","");sub("return;[^}]*$","");print $0;}' \
 	>> $1.log.2
 
 cat $2.log.1 |\
-	awk 'BEGIN{RS="^$"}{sub("^[^{]*{","");printf $0;}' \
+	awk 'BEGIN{RS="^$"}{sub("^[^{]*{","");print $0;}' \
 	>> $1.log.2	
 
 }
@@ -118,4 +119,4 @@ for i in `seq 0 $[fun_cnt-2]`;do
 done
 
 #rename .log.2 .log *.log.2
-rm -f *.{tmp1,tmp2,log.0,global}
+#rm -f *.{tmp1,tmp2,log.0,global}
