@@ -94,7 +94,7 @@ cat $1.log.0 |\
 	}' > $1.log.2
 
 grep "^[ \t]*\<\($1\|$2\)\>" api_call |\
-        sed "/$1/{N;s/)\n[ \t]*$2.*(/,/}" |\
+        sed "/$1/{N;s/);\n[ \t]*$2.*(/,/}" |\
 	awk -v co="$var_comm" \
 	'BEGIN{RS="^$";cnt=split(co,a_);}{
 		for(i=1;i<=cnt;i++){
