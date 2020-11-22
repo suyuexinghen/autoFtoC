@@ -63,13 +63,13 @@ awk -v b="$str_orig" -v a="$str_fun" \
 	'BEGIN{RS="^$";cnt=split(a,a_);split(b,b_);}{
 		for(i=1;i<=cnt;i++){
 			gsub("\\<"a_[i]"\\>",b_[i]);
+		printf $0;
 		}
 	}' > $fun.log.1
 else
 cp $fun.log{,.1} 
 fi
-
-		#printf $0; 	
+	
 done
 
 function merge_kernel(){
